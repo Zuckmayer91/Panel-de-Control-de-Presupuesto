@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Presupuesto de Campañas</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Iconos (Lucide Icons) -->
+    <script src="https://unpkg.com/lucide-icons@latest/dist/lucide.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+        }
+        .main-title {
+            background: linear-gradient(to right, #4f46e5, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .card {
+            background-color: white;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .stat-card {
+            background-color: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+        }
+        .icon-bg {
+            padding: 0.75rem;
+            border-radius: 9999px; /* circulo */
+        }
+        /* Estilo para el modal */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+        }
+    </style>
+</head>
+<body class="antialiased text-gray-800">
+
+    <div id="app-container" class="container mx-auto p-4 md:p-8">
+        
+        <!-- Cabecera -->
+        <header class="mb-10">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="text-center md:text-left">
+                    <h1 class="text-4xl md:text-5xl font-extrabold main-title">Panel de Control de Presupuesto</h1>
+                    <p class="text-gray-500 mt-2 text-lg">Análisis de presupuesto de medios.</p>
+                </div>
+                <div class="mt-4 md:mt-0 text-right">
+                    <div id="user-info" class="flex items-center space-x-2 justify-end">
+                        <!-- User info will be injected here -->
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Resumen General -->
+        <section id="summary" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <div class="stat-card">
+                <div class="icon-bg bg-indigo-100 text-indigo-600 mr-4"> <i data-lucide="wallet"></i> </div>
+                <div>
+                    <h2 class="text-gray-500 text-sm font-medium">Presupuesto Total</h2>
+                    <p id="total-budget" class="text-2xl font-bold text-gray-900">$0</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="icon-bg bg-red-100 text-red-600 mr-4"> <i data-lucide="trending-down"></i> </div>
+                <div>
+                    <h2 class="text-gray-500 text-sm font-medium">Gasto Total</h2>
+                    <p id="total-spent" class="text-2xl font-bold text-gray-900">$0</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="icon-bg bg-emerald-100 text-emerald-600 mr-4"> <i data-lucide="piggy-bank"></i> </div>
+                <div>
+                    <h2 class="text-gray-500 text-sm font-medium">Saldo Restante</h2>
+                    <p id="remaining-balance" class="text-2xl font-bold text-gray-900">$0</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Resumen por Campaña -->
+        <section class="mb-10">
+            <h3 class="text-2xl font-bold mb-4 text-gray-700">Resumen por Campaña</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Card Palo Alto -->
+                <div class="card p-6">
+                    <h4 class="text-lg font-bold text-indigo-700">Palo Alto</h4>
+                    <div class="mt-4 space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-500">Presupuesto:</span>
+                            <span id="palo-alto-budget" class="font-semibold text-gray-800">$0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-500">Gasto Actual:</span>
+                            <span id="palo-alto-spent" class="font-semibold text-red-600">$0</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                            <div id="palo-alto-progress" class="bg-indigo-600 h-2.5 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <div class="flex justify-between items-center mt-2">
+                            <span class="text-gray-500">Restante:</span>
+                            <span id="palo-alto-remaining" class="font-bold text-emerald-600">$0</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Card Cascadas -->
+                <div class="card p-6">
+                    <h4 class="text-lg font-bold text-teal-700">Cascadas de Dapa 2 Etapa 4</h4>
+                     <div class="mt-4 space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-500">Presupuesto:</span>
+                            <span id="cascadas-budget" class="font-semibold text-gray-800">$0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-500">Gasto Actual:</span>
+                            <span id="cascadas-spent" class="font-semibold text-red-600">$0</span>
+                        </div>
+                         <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                            <div id="cascadas-progress" class="bg-teal-500 h-2.5 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <div class="flex justify-between items-center mt-2">
+                            <span class="text-gray-500">Restante:</span>
+                            <span id="cascadas-remaining" class="font-bold text-emerald-600">$0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Controles y Gráficos -->
+        <section class="grid grid-cols-1 lg:grid-cols-5 gap-8 mb-10">
+            <!-- Formulario para añadir gastos -->
+            <div class="lg:col-span-2 card p-6">
+                <h3 class="text-xl font-bold mb-4">Registrar Nuevo Gasto</h3>
+                <form id="expense-form" class="space-y-4">
+                    <div>
+                        <label for="campaign-select" class="block text-sm font-medium text-gray-700">Campaña</label>
+                        <select id="campaign-select" name="campaign" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required>
+                            <!-- Opciones de campaña se cargarán aquí -->
+                        </select>
+                    </div>
+                    <div>
+                        <label for="platform-select" class="block text-sm font-medium text-gray-700">Plataforma</label>
+                        <select id="platform-select" name="platform" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required>
+                            <option value="Google Ads">Google Ads</option>
+                            <option value="Facebook Ads">Facebook Ads</option>
+                            <option value="Meta Ads">Meta Ads</option>
+                            <option value="TikTok Ads">TikTok Ads</option>
+                            <option value="RDStation">RDStation</option>
+                            <option value="Canva">Canva</option>
+                            <option value="Imagenes">Imagenes</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="amount-input" class="block text-sm font-medium text-gray-700">Monto Gastado (COP)</label>
+                        <input type="number" id="amount-input" name="amount" class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Ej: 500000" required>
+                    </div>
+                    <div>
+                        <label for="description-input" class="block text-sm font-medium text-gray-700">Descripción</label>
+                        <input type="text" id="description-input" name="description" class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Ej: Campaña de leads" required>
+                    </div>
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out flex items-center justify-center">
+                        <i data-lucide="plus-circle" class="mr-2"></i>Añadir Gasto
+                    </button>
+                </form>
+            </div>
+
+            <!-- Gráfico de distribución de gastos -->
+            <div class="lg:col-span-3 card p-6">
+                <h3 class="text-xl font-bold mb-4">Distribución de Gastos por Plataforma</h3>
+                <div class="h-80">
+                    <canvas id="platform-chart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Historial de Transacciones -->
+        <section class="card p-6">
+            <h3 class="text-xl font-bold mb-4">Historial de Transacciones</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Campaña</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plataforma</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registrado por</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactions-table-body" class="bg-white divide-y divide-gray-200">
+                        <!-- Filas de transacciones se insertarán aquí -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <!-- Modal de Autenticación -->
+    <div id="auth-modal" class="modal-backdrop hidden">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center">
+            <h2 class="text-2xl font-bold mb-2">Bienvenido</h2>
+            <p class="text-gray-600 mb-6">Ingresa tu nombre para continuar.</p>
+            <form id="auth-form">
+                <input type="text" id="username-input" class="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Tu nombre (Ej: Melisa)" required>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">Entrar</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURACIÓN Y DATOS INICIALES ---
+        const campaigns = [
+            { id: "palo-alto", name: "Palo Alto", budget: 6000000 },
+            { id: "cascadas-dapa", name: "Cascadas de Dapa 2 Etapa 4", budget: 4000000 }
+        ];
+        const TOTAL_BUDGET = campaigns.reduce((sum, camp) => sum + camp.budget, 0);
+
+        let currentUser = null;
+        let platformChart = null;
+
+        // --- CLAVES DE LOCALSTORAGE ---
+        const USER_STORAGE_KEY = 'budgetApp.user';
+        const EXPENSES_STORAGE_KEY = 'budgetApp.expenses';
+
+        // --- FUNCIONES DE FORMATO Y UI ---
+        const formatCurrency = (amount) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
+        const formatDate = (isoString) => new Date(isoString).toLocaleDateString('es-CO');
+
+        const showAuthModal = (show) => {
+            document.getElementById('auth-modal').classList.toggle('hidden', !show);
+        };
+
+        const updateUserInfo = (user) => {
+            const userInfoDiv = document.getElementById('user-info');
+            if (user && user.name) {
+                userInfoDiv.innerHTML = `<span class="font-semibold text-gray-700">Hola, ${user.name}</span> <div class="w-8 h-8 bg-indigo-200 text-indigo-700 rounded-full flex items-center justify-center font-bold">${user.name.charAt(0)}</div>`;
+            } else {
+                userInfoDiv.innerHTML = `<span class="text-gray-500">Usuario no identificado</span>`;
+            }
+        };
+
+        // --- LÓGICA DE GRÁFICOS ---
+        const createOrUpdateChart = (expenses) => {
+            const platformTotals = expenses.reduce((acc, expense) => {
+                const platform = expense.platform === 'Facebook Ads' ? 'Meta Ads' : expense.platform;
+                acc[platform] = (acc[platform] || 0) + expense.amount;
+                return acc;
+            }, {});
+
+            const chartData = {
+                labels: Object.keys(platformTotals),
+                datasets: [{
+                    data: Object.values(platformTotals),
+                    backgroundColor: ['#4338ca', '#16a34a', '#0891b2', '#be123c', '#6d28d9', '#d97706', '#f59e0b'],
+                    borderColor: '#ffffff',
+                    borderWidth: 4,
+                    hoverOffset: 8
+                }]
+            };
+
+            if (platformChart) {
+                platformChart.data = chartData;
+                platformChart.update();
+            } else {
+                const ctx = document.getElementById('platform-chart').getContext('2d');
+                platformChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: chartData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '70%',
+                        plugins: {
+                            legend: { position: 'bottom' },
+                            tooltip: { callbacks: { label: (c) => `${c.label}: ${formatCurrency(c.parsed)}` } }
+                        }
+                    }
+                });
+            }
+        };
+
+        // --- LÓGICA DE DATOS (LOCALSTORAGE) ---
+        const getExpensesFromStorage = () => {
+            const storedExpenses = localStorage.getItem(EXPENSES_STORAGE_KEY);
+            return storedExpenses ? JSON.parse(storedExpenses) : [];
+        };
+
+        const saveExpensesToStorage = (expenses) => {
+            localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses));
+        };
+        
+        const getUserFromStorage = () => {
+            const storedUser = localStorage.getItem(USER_STORAGE_KEY);
+            return storedUser ? JSON.parse(storedUser) : null;
+        };
+
+        const saveUserToStorage = (user) => {
+            localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+        };
+
+        // --- LÓGICA PRINCIPAL DEL DASHBOARD ---
+        const updateDashboard = () => {
+            const expenses = getExpensesFromStorage();
+            const totalSpent = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+            
+            // 1. Actualizar Resumen General
+            document.getElementById('total-budget').textContent = formatCurrency(TOTAL_BUDGET);
+            document.getElementById('total-spent').textContent = formatCurrency(totalSpent);
+            document.getElementById('remaining-balance').textContent = formatCurrency(TOTAL_BUDGET - totalSpent);
+
+            // 2. Actualizar Resumen por Campaña
+            campaigns.forEach(campaign => {
+                const campaignExpenses = expenses.filter(e => e.campaignId === campaign.id);
+                const campaignSpent = campaignExpenses.reduce((sum, e) => sum + e.amount, 0);
+                const campaignRemaining = campaign.budget - campaignSpent;
+                const spentPercentage = campaign.budget > 0 ? (campaignSpent / campaign.budget) * 100 : 0;
+
+                document.getElementById(`${campaign.id}-budget`).textContent = formatCurrency(campaign.budget);
+                document.getElementById(`${campaign.id}-spent`).textContent = formatCurrency(campaignSpent);
+                document.getElementById(`${campaign.id}-remaining`).textContent = formatCurrency(campaignRemaining);
+                document.getElementById(`${campaign.id}-progress`).style.width = `${spentPercentage}%`;
+            });
+
+            // 3. Actualizar tabla de transacciones
+            const tableBody = document.getElementById('transactions-table-body');
+            tableBody.innerHTML = expenses
+                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                .map(e => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatDate(e.createdAt)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${e.campaignName}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${e.platform}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-800">${formatCurrency(e.amount)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${e.description}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${e.userName || 'Anónimo'}</td>
+                </tr>
+            `).join('');
+
+            // 4. Actualizar gráfico
+            createOrUpdateChart(expenses);
+        };
+
+        const handleAddExpense = (e) => {
+            e.preventDefault();
+            if (!currentUser || !currentUser.name) {
+                alert("Por favor, ingresa tu nombre para registrar un gasto.");
+                showAuthModal(true);
+                return;
+            }
+
+            const form = e.target;
+            const campaignSelect = form.elements['campaign'];
+            const newExpense = {
+                id: crypto.randomUUID(),
+                campaignId: campaignSelect.value,
+                campaignName: campaignSelect.options[campaignSelect.selectedIndex].text,
+                platform: form.elements['platform'].value,
+                amount: Number(form.elements['amount'].value),
+                description: form.elements['description'].value,
+                userName: currentUser.name,
+                createdAt: new Date().toISOString()
+            };
+
+            const expenses = getExpensesFromStorage();
+            expenses.push(newExpense);
+            saveExpensesToStorage(expenses);
+            
+            updateDashboard(); // Re-render everything
+            form.reset();
+        };
+
+        // --- INICIALIZACIÓN DE LA APLICACIÓN ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Cargar campañas en el select
+            const campaignSelect = document.getElementById('campaign-select');
+            campaigns.forEach(c => {
+                const option = document.createElement('option');
+                option.value = c.id;
+                option.textContent = c.name;
+                campaignSelect.appendChild(option);
+            });
+
+            // Configurar formulario de gastos
+            document.getElementById('expense-form').addEventListener('submit', handleAddExpense);
+            
+            // Iniciar iconos
+            lucide.createIcons();
+
+            // Lógica de "autenticación" local
+            currentUser = getUserFromStorage();
+            if (currentUser && currentUser.name) {
+                showAuthModal(false);
+                updateUserInfo(currentUser);
+                updateDashboard(); // Cargar datos al iniciar
+            } else {
+                showAuthModal(true);
+            }
+
+            // Manejar el formulario de "autenticación"
+            document.getElementById('auth-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const username = document.getElementById('username-input').value.trim();
+                if (username) {
+                    currentUser = { name: username };
+                    saveUserToStorage(currentUser);
+                    updateUserInfo(currentUser);
+                    showAuthModal(false);
+                    updateDashboard(); // Cargar datos después de iniciar sesión
+                }
+            });
+        });
+    </script>
+</body>
+</html>
