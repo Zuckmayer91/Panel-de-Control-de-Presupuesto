@@ -51,7 +51,7 @@
             padding: 0.75rem;
             border-radius: 9999px; /* circulo */
         }
-        /* Estilo para el modal */
+        /* Estilo para modales */
         .modal-backdrop {
             position: fixed;
             top: 0;
@@ -63,6 +63,7 @@
             justify-content: center;
             align-items: center;
             z-index: 50;
+            transition: opacity 0.3s ease;
         }
     </style>
 </head>
@@ -163,7 +164,17 @@
         <section class="grid grid-cols-1 lg:grid-cols-5 gap-8 mb-10">
             <!-- Formulario para añadir gastos -->
             <div class="lg:col-span-2 card p-6">
-                <h3 class="text-xl font-bold mb-4">Registrar Nuevo Gasto</h3>
+                <!-- SECCIÓN DE PEGADO INTELIGENTE -->
+                <div class="mb-6 p-4 bg-indigo-50 rounded-lg border border-indigo-200">
+                    <h4 class="text-lg font-semibold text-indigo-800 mb-2">Pegado Inteligente</h4>
+                    <p class="text-sm text-gray-600 mb-2">Pega aquí la línea de texto de tu extracto bancario y haz clic en Analizar.</p>
+                    <textarea id="paste-area" class="w-full h-20 p-2 border border-gray-300 rounded-md" placeholder="Ej: 20 Jul 2025 Google*ads2397433756 $ 1.500.000,00"></textarea>
+                    <button type="button" id="parse-button" class="mt-2 w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center">
+                        <i data-lucide="scan-line" class="mr-2 h-4 w-4"></i>Analizar Datos Pegados
+                    </button>
+                </div>
+
+                <h3 class="text-xl font-bold mb-4 border-t pt-4 mt-4">Registrar Nuevo Gasto</h3>
                 <form id="expense-form" class="space-y-4">
                     <div>
                         <label for="campaign-select" class="block text-sm font-medium text-gray-700">Campaña</label>
@@ -186,7 +197,8 @@
                     </div>
                     <div>
                         <label for="amount-input" class="block text-sm font-medium text-gray-700">Monto Gastado (COP)</label>
-                        <input type="number" id="amount-input" name="amount" class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Ej: 500000" required>
+                        <input type="text" inputmode="numeric" id="amount-input" name="amount" class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Ej: 1250000" required>
+                        <p class="mt-1 text-xs text-gray-500">Puedes pegar el valor directamente. Los puntos y símbolos se ignorarán.</p>
                     </div>
                     <div>
                         <label for="description-input" class="block text-sm font-medium text-gray-700">Descripción</label>
@@ -201,15 +213,25 @@
             <!-- Gráfico de distribución de gastos -->
             <div class="lg:col-span-3 card p-6">
                 <h3 class="text-xl font-bold mb-4">Distribución de Gastos por Plataforma</h3>
-                <div class="h-80">
-                    <canvas id="platform-chart"></canvas>
+                <div class="h-80 relative">
+                    <canvas id="platform-chart" class="hidden"></canvas>
+                    <div id="chart-placeholder" class="absolute inset-0 flex flex-col justify-center items-center text-center text-gray-500">
+                        <i data-lucide="pie-chart" class="w-16 h-16 mb-4 text-gray-300"></i>
+                        <p class="font-semibold">Aún no hay datos para mostrar.</p>
+                        <p class="text-sm">Registra un nuevo gasto para ver la distribución aquí.</p>
+                    </div>
                 </div>
             </div>
         </section>
 
         <!-- Historial de Transacciones -->
         <section class="card p-6">
-            <h3 class="text-xl font-bold mb-4">Historial de Transacciones</h3>
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Historial de Transacciones</h3>
+                <button id="clear-data-button" class="bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-2 px-3 rounded-lg shadow-md transition duration-300 ease-in-out flex items-center">
+                    <i data-lucide="trash-2" class="mr-2 h-4 w-4"></i>Limpiar Datos
+                </button>
+            </div>
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
@@ -242,6 +264,17 @@
         </div>
     </div>
 
+    <!-- Modal Genérico para Alertas y Confirmaciones -->
+    <div id="generic-modal" class="modal-backdrop hidden">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center">
+            <h2 id="modal-title" class="text-xl font-bold mb-4"></h2>
+            <p id="modal-message" class="text-gray-600 mb-6"></p>
+            <div id="modal-buttons" class="flex justify-center space-x-4">
+                <!-- Los botones se inyectarán aquí -->
+            </div>
+        </div>
+    </div>
+
     <script>
         // --- CONFIGURACIÓN Y DATOS INICIALES ---
         const campaigns = [
@@ -265,6 +298,29 @@
             document.getElementById('auth-modal').classList.toggle('hidden', !show);
         };
 
+        const showModal = (title, message, buttons, buttonLayoutClass = 'flex justify-center space-x-4') => {
+            document.getElementById('modal-title').innerHTML = title;
+            document.getElementById('modal-message').innerHTML = message;
+            const buttonsContainer = document.getElementById('modal-buttons');
+            buttonsContainer.innerHTML = ''; // Limpiar botones anteriores
+            buttonsContainer.className = buttonLayoutClass; // Aplicar clase de layout
+
+            buttons.forEach(btnInfo => {
+                const buttonEl = document.createElement('button');
+                buttonEl.textContent = btnInfo.text;
+                buttonEl.className = btnInfo.classes;
+                buttonEl.onclick = () => {
+                    document.getElementById('generic-modal').classList.add('hidden');
+                    if (btnInfo.onClick) {
+                        btnInfo.onClick();
+                    }
+                };
+                buttonsContainer.appendChild(buttonEl);
+            });
+
+            document.getElementById('generic-modal').classList.remove('hidden');
+        };
+
         const updateUserInfo = (user) => {
             const userInfoDiv = document.getElementById('user-info');
             if (user && user.name) {
@@ -276,6 +332,22 @@
 
         // --- LÓGICA DE GRÁFICOS ---
         const createOrUpdateChart = (expenses) => {
+            const chartCanvas = document.getElementById('platform-chart');
+            const chartPlaceholder = document.getElementById('chart-placeholder');
+
+            if (expenses.length === 0) {
+                chartCanvas.classList.add('hidden');
+                chartPlaceholder.classList.remove('hidden');
+                if (platformChart) {
+                    platformChart.destroy();
+                    platformChart = null;
+                }
+                return;
+            }
+            
+            chartCanvas.classList.remove('hidden');
+            chartPlaceholder.classList.add('hidden');
+
             const platformTotals = expenses.reduce((acc, expense) => {
                 const platform = expense.platform === 'Facebook Ads' ? 'Meta Ads' : expense.platform;
                 acc[platform] = (acc[platform] || 0) + expense.amount;
@@ -297,7 +369,7 @@
                 platformChart.data = chartData;
                 platformChart.update();
             } else {
-                const ctx = document.getElementById('platform-chart').getContext('2d');
+                const ctx = chartCanvas.getContext('2d');
                 platformChart = new Chart(ctx, {
                     type: 'doughnut',
                     data: chartData,
@@ -338,12 +410,10 @@
             const expenses = getExpensesFromStorage();
             const totalSpent = expenses.reduce((sum, expense) => sum + expense.amount, 0);
             
-            // 1. Actualizar Resumen General
             document.getElementById('total-budget').textContent = formatCurrency(TOTAL_BUDGET);
             document.getElementById('total-spent').textContent = formatCurrency(totalSpent);
             document.getElementById('remaining-balance').textContent = formatCurrency(TOTAL_BUDGET - totalSpent);
 
-            // 2. Actualizar Resumen por Campaña
             campaigns.forEach(campaign => {
                 const campaignExpenses = expenses.filter(e => e.campaignId === campaign.id);
                 const campaignSpent = campaignExpenses.reduce((sum, e) => sum + e.amount, 0);
@@ -356,7 +426,6 @@
                 document.getElementById(`${campaign.id}-progress`).style.width = `${spentPercentage}%`;
             });
 
-            // 3. Actualizar tabla de transacciones
             const tableBody = document.getElementById('transactions-table-body');
             tableBody.innerHTML = expenses
                 .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
@@ -371,26 +440,36 @@
                 </tr>
             `).join('');
 
-            // 4. Actualizar gráfico
             createOrUpdateChart(expenses);
         };
 
         const handleAddExpense = (e) => {
             e.preventDefault();
             if (!currentUser || !currentUser.name) {
-                alert("Por favor, ingresa tu nombre para registrar un gasto.");
-                showAuthModal(true);
+                showModal('Inicio de Sesión Requerido', 'Por favor, ingresa tu nombre para registrar un gasto.', [
+                    { text: 'Entendido', classes: 'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg', onClick: () => showAuthModal(true) }
+                ]);
                 return;
             }
 
             const form = e.target;
             const campaignSelect = form.elements['campaign'];
+            const rawAmount = form.elements['amount'].value;
+            const cleanedAmount = rawAmount.replace(/\D/g, '');
+
+            if (cleanedAmount === '' || Number(cleanedAmount) <= 0) {
+                showModal('Error en el Monto', 'Por favor, ingresa un monto válido.', [
+                    { text: 'Cerrar', classes: 'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg' }
+                ]);
+                return;
+            }
+
             const newExpense = {
                 id: crypto.randomUUID(),
                 campaignId: campaignSelect.value,
                 campaignName: campaignSelect.options[campaignSelect.selectedIndex].text,
                 platform: form.elements['platform'].value,
-                amount: Number(form.elements['amount'].value),
+                amount: Number(cleanedAmount),
                 description: form.elements['description'].value,
                 userName: currentUser.name,
                 createdAt: new Date().toISOString()
@@ -400,13 +479,80 @@
             expenses.push(newExpense);
             saveExpensesToStorage(expenses);
             
-            updateDashboard(); // Re-render everything
+            updateDashboard();
             form.reset();
+            document.getElementById('paste-area').value = '';
+        };
+
+        const handleClearData = () => {
+            showModal(
+                'Confirmar Acción',
+                '¿Estás seguro de que quieres borrar todos los datos? Esta acción no se puede deshacer.',
+                [
+                    { text: 'Cancelar', classes: 'bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg' },
+                    { text: 'Borrar Datos', classes: 'bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg', onClick: () => {
+                        localStorage.removeItem(EXPENSES_STORAGE_KEY);
+                        localStorage.removeItem(USER_STORAGE_KEY);
+                        location.reload();
+                    }}
+                ]
+            );
+        };
+
+        const populateForm = (campaignId, amount, description, platform) => {
+            document.getElementById('campaign-select').value = campaignId;
+            document.getElementById('amount-input').value = amount;
+            document.getElementById('description-input').value = description;
+            document.getElementById('platform-select').value = platform;
+        }
+
+        const handleParseData = () => {
+            const text = document.getElementById('paste-area').value;
+            if (!text) return;
+
+            const amountMatch = text.match(/\$\s*([\d\.,]+)/);
+            let cleanedAmount = '';
+            let remainingText = text;
+
+            if (amountMatch && amountMatch[1]) {
+                cleanedAmount = amountMatch[1].replace(/\./g, '').split(',')[0];
+                remainingText = text.replace(amountMatch[0], '');
+            } else {
+                 showModal('Datos no Válidos', 'No se pudo encontrar un monto en el texto pegado. Asegúrate de que incluya un valor como "$ 1.234.567".', [{ text: 'Cerrar', classes: 'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg' }]);
+                 return;
+            }
+
+            const cleanedDescription = remainingText.replace(/\d{1,2}\s+\w{3}\s+\d{4}/, '').trim();
+            
+            const descriptionLower = cleanedDescription.toLowerCase();
+            let detectedPlatform = 'Otro';
+            if (descriptionLower.includes('google')) {
+                detectedPlatform = 'Google Ads';
+            } else if (descriptionLower.includes('facebk') || descriptionLower.includes('facebook') || descriptionLower.includes('meta')) {
+                detectedPlatform = 'Meta Ads';
+            } else if (descriptionLower.includes('tiktok')) {
+                detectedPlatform = 'TikTok Ads';
+            }
+            
+            const title = 'Seleccionar Campaña';
+            const message = `Se detectó un gasto de <b class="text-indigo-600">${formatCurrency(cleanedAmount)}</b> con la descripción "<b class="text-indigo-600">${cleanedDescription}</b>".<br><br>¿A qué campaña pertenece?`;
+            
+            const campaignButtons = campaigns.map(campaign => ({
+                text: campaign.name,
+                classes: 'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg',
+                onClick: () => populateForm(campaign.id, cleanedAmount, cleanedDescription, detectedPlatform)
+            }));
+
+            const allButtons = [
+                ...campaignButtons,
+                { text: 'Cancelar', classes: 'w-full mt-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg' }
+            ];
+
+            showModal(title, message, allButtons, 'flex flex-col w-full space-y-2');
         };
 
         // --- INICIALIZACIÓN DE LA APLICACIÓN ---
         document.addEventListener('DOMContentLoaded', () => {
-            // Cargar campañas en el select
             const campaignSelect = document.getElementById('campaign-select');
             campaigns.forEach(c => {
                 const option = document.createElement('option');
@@ -415,23 +561,21 @@
                 campaignSelect.appendChild(option);
             });
 
-            // Configurar formulario de gastos
             document.getElementById('expense-form').addEventListener('submit', handleAddExpense);
+            document.getElementById('clear-data-button').addEventListener('click', handleClearData);
+            document.getElementById('parse-button').addEventListener('click', handleParseData);
             
-            // Iniciar iconos
             lucide.createIcons();
 
-            // Lógica de "autenticación" local
             currentUser = getUserFromStorage();
             if (currentUser && currentUser.name) {
                 showAuthModal(false);
                 updateUserInfo(currentUser);
-                updateDashboard(); // Cargar datos al iniciar
             } else {
                 showAuthModal(true);
             }
+            updateDashboard();
 
-            // Manejar el formulario de "autenticación"
             document.getElementById('auth-form').addEventListener('submit', (e) => {
                 e.preventDefault();
                 const username = document.getElementById('username-input').value.trim();
@@ -440,7 +584,7 @@
                     saveUserToStorage(currentUser);
                     updateUserInfo(currentUser);
                     showAuthModal(false);
-                    updateDashboard(); // Cargar datos después de iniciar sesión
+                    updateDashboard();
                 }
             });
         });
