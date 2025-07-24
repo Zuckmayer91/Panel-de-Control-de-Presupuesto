@@ -481,7 +481,7 @@
                                     <div class="w-24 text-right font-semibold text-gray-700">${formatCurrency(dailyCost)}</div>
                                     <div class="w-24 text-right font-semibold text-gray-700">${formatCurrency(monthlyCost)}</div>
                                     <div class="w-32 text-right flex items-center justify-end space-x-1">
-                                        <button data-campaign-id="${campaign.id}" data-subcampaign-id="${sc.id}" class="edit-subcampaign-btn text-gray-400 hover:text-indigo-600 p-1 rounded-full"><i data-lucide="edit-3" class="h-4 w-4"></i></button>
+                                        <button data-campaign-id="${campaign.id}" data-subcampaign-id="${sc.id}" class="edit-subcampaign-btn text-gray-400 hover:text-indigo-600 p-1 rounded-full"><i data-lucide="pencil" class="h-4 w-4"></i></button>
                                         <button data-campaign-id="${campaign.id}" data-subcampaign-id="${sc.id}" class="delete-subcampaign-btn text-gray-400 hover:text-red-600 p-1 rounded-full"><i data-lucide="trash-2" class="h-4 w-4"></i></button>
                                         <label class="relative inline-flex items-center cursor-pointer">
                                             <input type="checkbox" class="sr-only peer toggle-status-btn" data-campaign-id="${campaign.id}" data-subcampaign-id="${sc.id}" ${sc.active ? 'checked' : ''}>
@@ -626,19 +626,19 @@
 
         document.getElementById('clear-data-button').addEventListener('click', () => {
              showModal(
-                 'Confirmar Acción',
-                 '¿Estás seguro de que quieres borrar <b>todos los datos guardados</b> (gastos y planes de inversión)? Esta acción no se puede deshacer y restaurará la simulación a su estado inicial.',
-                 [
-                     { text: 'Cancelar', classes: 'bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg' },
-                     { text: 'Sí, Borrar Todo', classes: 'bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg', onClick: () => {
-                         localStorage.removeItem(EXPENSES_STORAGE_KEY);
-                         localStorage.removeItem(CAMPAIGNS_STORAGE_KEY);
-                         localStorage.removeItem(USER_STORAGE_KEY);
-                         showToast("Todos los datos han sido eliminados.");
-                         setTimeout(() => location.reload(), 1000);
-                     }}
-                 ]
-             );
+                'Confirmar Acción',
+                '¿Estás seguro de que quieres borrar <b>todos los datos guardados</b> (gastos y planes de inversión)? Esta acción no se puede deshacer y restaurará la simulación a su estado inicial.',
+                [
+                    { text: 'Cancelar', classes: 'bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg' },
+                    { text: 'Sí, Borrar Todo', classes: 'bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg', onClick: () => {
+                        localStorage.removeItem(EXPENSES_STORAGE_KEY);
+                        localStorage.removeItem(CAMPAIGNS_STORAGE_KEY);
+                        localStorage.removeItem(USER_STORAGE_KEY);
+                        showToast("Todos los datos han sido eliminados.");
+                        setTimeout(() => location.reload(), 1000);
+                    }}
+                ]
+            );
         });
         
         document.getElementById('app-container').addEventListener('click', (e) => {
