@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Presupuesto de Campañas</title>
+    <title>Panel de Presupuesto (Simulación Local)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -51,7 +51,6 @@
             padding: 0.75rem;
             border-radius: 9999px; /* circulo */
         }
-        /* Estilo para modales */
         .modal-backdrop {
             position: fixed;
             top: 0;
@@ -65,40 +64,62 @@
             z-index: 50;
             transition: opacity 0.3s ease;
         }
+        #toast-container {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .toast {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-radius: 0.75rem;
+            color: white;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            transform: translateX(120%);
+            transition: transform 0.4s ease-in-out;
+        }
+        .toast.show {
+            transform: translateX(0);
+        }
+        .toast-success { background-color: #22c55e; }
+        .toast-error { background-color: #ef4444; }
     </style>
 </head>
 <body class="antialiased text-gray-800">
 
     <div id="app-container" class="container mx-auto p-4 md:p-8">
         
-        <!-- Cabecera -->
         <header class="mb-10">
-            <div class="flex flex-col md:flex-row justify-between items-center">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-6">
                 <div class="text-center md:text-left">
                     <h1 class="text-4xl md:text-5xl font-extrabold main-title">Panel de Control de Presupuesto</h1>
-                    <p class="text-gray-500 mt-2 text-lg">Análisis de presupuesto de medios.</p>
+                    <p class="text-gray-500 mt-2 text-lg">Simulación de presupuesto de medios.</p>
                 </div>
-                <div class="mt-4 md:mt-0 text-right">
-                    <div id="user-info" class="flex items-center space-x-2 justify-end">
+                <div class="text-center md:text-right">
+                    <div id="user-info" class="flex items-center space-x-3 justify-center md:justify-end">
                         <!-- User info will be injected here -->
                     </div>
                 </div>
             </div>
         </header>
 
-        <!-- Resumen General -->
         <section id="summary" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
             <div class="stat-card">
                 <div class="icon-bg bg-indigo-100 text-indigo-600 mr-4"> <i data-lucide="wallet"></i> </div>
                 <div>
-                    <h2 class="text-gray-500 text-sm font-medium">Presupuesto Total</h2>
+                    <h2 class="text-gray-500 text-sm font-medium">Presupuesto Total Planificado</h2>
                     <p id="total-budget" class="text-2xl font-bold text-gray-900">$0</p>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="icon-bg bg-red-100 text-red-600 mr-4"> <i data-lucide="trending-down"></i> </div>
                 <div>
-                    <h2 class="text-gray-500 text-sm font-medium">Gasto Total</h2>
+                    <h2 class="text-gray-500 text-sm font-medium">Gasto Total Real</h2>
                     <p id="total-spent" class="text-2xl font-bold text-gray-900">$0</p>
                 </div>
             </div>
@@ -111,75 +132,29 @@
             </div>
         </section>
 
-        <!-- Resumen por Campaña -->
         <section class="mb-10">
-            <h3 class="text-2xl font-bold mb-4 text-gray-700">Resumen por Campaña</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Card Palo Alto -->
-                <div class="card p-6">
-                    <h4 class="text-lg font-bold text-indigo-700">Palo Alto</h4>
-                    <div class="mt-4 space-y-2">
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-500">Presupuesto:</span>
-                            <span id="palo-alto-budget" class="font-semibold text-gray-800">$0</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-500">Gasto Actual:</span>
-                            <span id="palo-alto-spent" class="font-semibold text-red-600">$0</span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-                            <div id="palo-alto-progress" class="bg-indigo-600 h-2.5 rounded-full" style="width: 0%"></div>
-                        </div>
-                        <div class="flex justify-between items-center mt-2">
-                            <span class="text-gray-500">Restante:</span>
-                            <span id="palo-alto-remaining" class="font-bold text-emerald-600">$0</span>
-                        </div>
-                    </div>
-                </div>
-                <!-- Card Cascadas -->
-                <div class="card p-6">
-                    <h4 class="text-lg font-bold text-teal-700">Cascadas de Dapa 2 Etapa 4</h4>
-                     <div class="mt-4 space-y-2">
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-500">Presupuesto:</span>
-                            <span id="cascadas-budget" class="font-semibold text-gray-800">$0</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-500">Gasto Actual:</span>
-                            <span id="cascadas-spent" class="font-semibold text-red-600">$0</span>
-                        </div>
-                         <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-                            <div id="cascadas-progress" class="bg-teal-500 h-2.5 rounded-full" style="width: 0%"></div>
-                        </div>
-                        <div class="flex justify-between items-center mt-2">
-                            <span class="text-gray-500">Restante:</span>
-                            <span id="cascadas-remaining" class="font-bold text-emerald-600">$0</span>
-                        </div>
-                    </div>
-                </div>
+            <h3 class="text-2xl font-bold mb-4 text-gray-700">Plan de Inversión por Campaña</h3>
+            <div id="campaigns-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
             </div>
         </section>
 
-        <!-- Controles y Gráficos -->
         <section class="grid grid-cols-1 lg:grid-cols-5 gap-8 mb-10">
-            <!-- Formulario para añadir gastos -->
             <div class="lg:col-span-2 card p-6">
-                <!-- SECCIÓN DE PEGADO INTELIGENTE -->
                 <div class="mb-6 p-4 bg-indigo-50 rounded-lg border border-indigo-200">
-                    <h4 class="text-lg font-semibold text-indigo-800 mb-2">Pegado Inteligente</h4>
-                    <p class="text-sm text-gray-600 mb-2">Pega aquí la línea de texto de tu extracto bancario y haz clic en Analizar.</p>
-                    <textarea id="paste-area" class="w-full h-20 p-2 border border-gray-300 rounded-md" placeholder="Ej: 20 Jul 2025 Google*ads2397433756 $ 1.500.000,00"></textarea>
-                    <button type="button" id="parse-button" class="mt-2 w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center">
-                        <i data-lucide="scan-line" class="mr-2 h-4 w-4"></i>Analizar Datos Pegados
+                    <h4 class="text-lg font-semibold text-indigo-800 mb-2">Pegado Inteligente de Gastos</h4>
+                    <p class="text-sm text-gray-600 mb-2">Pega aquí la línea de tu extracto para registrar un gasto real.</p>
+                    <textarea id="paste-area" class="w-full h-20 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Ej: 20 Jul 2025 Google*ads2397433756 $ 1.500.000,00"></textarea>
+                    <button type="button" id="parse-button" class="mt-2 w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center transition-colors">
+                        <i data-lucide="scan-line" class="mr-2 h-4 w-4"></i>Analizar y Registrar Gasto
                     </button>
                 </div>
 
-                <h3 class="text-xl font-bold mb-4 border-t pt-4 mt-4">Registrar Nuevo Gasto</h3>
+                <h3 class="text-xl font-bold mb-2 border-t pt-4 mt-4">Registrar Gasto Real Manualmente</h3>
+                <p class="text-sm text-gray-500 mb-4">Usa este formulario para añadir los gastos a medida que se producen.</p>
                 <form id="expense-form" class="space-y-4">
                     <div>
                         <label for="campaign-select" class="block text-sm font-medium text-gray-700">Campaña</label>
                         <select id="campaign-select" name="campaign" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required>
-                            <!-- Opciones de campaña se cargarán aquí -->
                         </select>
                     </div>
                     <div>
@@ -198,7 +173,6 @@
                     <div>
                         <label for="amount-input" class="block text-sm font-medium text-gray-700">Monto Gastado (COP)</label>
                         <input type="text" inputmode="numeric" id="amount-input" name="amount" class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Ej: 1250000" required>
-                        <p class="mt-1 text-xs text-gray-500">Puedes pegar el valor directamente. Los puntos y símbolos se ignorarán.</p>
                     </div>
                     <div>
                         <label for="description-input" class="block text-sm font-medium text-gray-700">Descripción</label>
@@ -210,26 +184,24 @@
                 </form>
             </div>
 
-            <!-- Gráfico de distribución de gastos -->
             <div class="lg:col-span-3 card p-6">
-                <h3 class="text-xl font-bold mb-4">Distribución de Gastos por Plataforma</h3>
+                <h3 class="text-xl font-bold mb-4">Distribución de Gastos Reales</h3>
                 <div class="h-80 relative">
-                    <canvas id="platform-chart" class="hidden"></canvas>
-                    <div id="chart-placeholder" class="absolute inset-0 flex flex-col justify-center items-center text-center text-gray-500">
+                    <canvas id="platform-chart"></canvas>
+                    <div id="chart-placeholder" class="absolute inset-0 flex flex-col justify-center items-center text-center text-gray-500 hidden">
                         <i data-lucide="pie-chart" class="w-16 h-16 mb-4 text-gray-300"></i>
-                        <p class="font-semibold">Aún no hay datos para mostrar.</p>
+                        <p class="font-semibold">Aún no hay gastos para mostrar.</p>
                         <p class="text-sm">Registra un nuevo gasto para ver la distribución aquí.</p>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Historial de Transacciones -->
         <section class="card p-6">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold">Historial de Transacciones</h3>
+            <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
+                <h3 class="text-xl font-bold">Historial de Gastos Reales</h3>
                 <button id="clear-data-button" class="bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-2 px-3 rounded-lg shadow-md transition duration-300 ease-in-out flex items-center">
-                    <i data-lucide="trash-2" class="mr-2 h-4 w-4"></i>Limpiar Datos
+                    <i data-lucide="trash-2" class="mr-2 h-4 w-4"></i>Limpiar Todos los Datos
                 </button>
             </div>
             <div class="overflow-x-auto">
@@ -245,18 +217,17 @@
                         </tr>
                     </thead>
                     <tbody id="transactions-table-body" class="bg-white divide-y divide-gray-200">
-                        <!-- Filas de transacciones se insertarán aquí -->
                     </tbody>
                 </table>
             </div>
         </section>
     </div>
 
-    <!-- Modal de Autenticación -->
+    <!-- Modales -->
     <div id="auth-modal" class="modal-backdrop hidden">
         <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center">
-            <h2 class="text-2xl font-bold mb-2">Bienvenido</h2>
-            <p class="text-gray-600 mb-6">Ingresa tu nombre para continuar.</p>
+            <h2 class="text-2xl font-bold mb-2">Bienvenido al Panel</h2>
+            <p class="text-gray-600 mb-6">Ingresa tu nombre para identificarte.</p>
             <form id="auth-form">
                 <input type="text" id="username-input" class="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Tu nombre (Ej: Melisa)" required>
                 <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">Entrar</button>
@@ -264,74 +235,255 @@
         </div>
     </div>
 
-    <!-- Modal Genérico para Alertas y Confirmaciones -->
     <div id="generic-modal" class="modal-backdrop hidden">
-        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md text-center">
             <h2 id="modal-title" class="text-xl font-bold mb-4"></h2>
             <p id="modal-message" class="text-gray-600 mb-6"></p>
-            <div id="modal-buttons" class="flex justify-center space-x-4">
-                <!-- Los botones se inyectarán aquí -->
-            </div>
+            <div id="modal-buttons" class="flex justify-center space-x-4"></div>
+        </div>
+    </div>
+    
+    <div id="subcampaign-modal" class="modal-backdrop hidden">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md">
+            <h2 id="subcampaign-modal-title" class="text-xl font-bold mb-6"></h2>
+            <form id="subcampaign-form" class="space-y-4">
+                <input type="hidden" id="subcampaign-campaign-id">
+                <input type="hidden" id="subcampaign-id">
+                <div>
+                    <label for="subcampaign-name" class="block text-sm font-medium text-gray-700">Nombre de la Línea</label>
+                    <input type="text" id="subcampaign-name" class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 sm:text-sm" required placeholder="Ej: Anuncios en Instagram">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="subcampaign-budget" class="block text-sm font-medium text-gray-700">Presupuesto Total (COP)</label>
+                        <input type="text" inputmode="numeric" id="subcampaign-budget" class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 sm:text-sm" required placeholder="500000">
+                    </div>
+                    <div>
+                        <label for="subcampaign-days" class="block text-sm font-medium text-gray-700">Duración (días)</label>
+                        <input type="number" id="subcampaign-days" class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 sm:text-sm" required placeholder="30">
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" id="cancel-subcampaign-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">Cancelar</button>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">Guardar Cambios</button>
+                </div>
+            </form>
         </div>
     </div>
 
-    <script>
-        // --- CONFIGURACIÓN Y DATOS INICIALES ---
-        const campaigns = [
-            { id: "palo-alto", name: "Palo Alto", budget: 6000000 },
-            { id: "cascadas-dapa", name: "Cascadas de Dapa 2 Etapa 4", budget: 4000000 }
-        ];
-        const TOTAL_BUDGET = campaigns.reduce((sum, camp) => sum + camp.budget, 0);
+    <div id="toast-container"></div>
 
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- CONFIGURACIÓN Y DATOS INICIALES ---
+        const USER_STORAGE_KEY = 'budgetApp.user';
+        const EXPENSES_STORAGE_KEY = 'budgetApp.expenses';
+        const CAMPAIGNS_STORAGE_KEY = 'budgetApp.campaigns';
+
+        const initialCampaignsData = [
+            {
+                id: "palo-alto",
+                name: "Palo Alto",
+                subCampaigns: [
+                    { id: "pa-meta-forms", name: "Formularios (Meta)", budget: 2000000, days: 30, active: true },
+                    { id: "pa-meta-wa", name: "Whatsapp (Meta)", budget: 1800000, days: 30, active: true },
+                    { id: "pa-meta-ext", name: "Exterior (Meta)", budget: 300000, days: 15, active: false },
+                    { id: "pa-google-yt", name: "Youtube (Google)", budget: 400000, days: 30, active: true },
+                    { id: "pa-google-perf", name: "Max. Performance (Google)", budget: 800000, days: 30, active: true },
+                    { id: "pa-google-search", name: "Búsqueda (Google)", budget: 700000, days: 30, active: true }
+                ]
+            },
+            {
+                id: "cascadas-dapa",
+                name: "Cascadas de Dapa 2 Etapa 4",
+                budget: 4000000,
+                subCampaigns: []
+            }
+        ];
+        
         let currentUser = null;
         let platformChart = null;
 
-        // --- CLAVES DE LOCALSTORAGE ---
-        const USER_STORAGE_KEY = 'budgetApp.user';
-        const EXPENSES_STORAGE_KEY = 'budgetApp.expenses';
+        // --- FUNCIONES DE DATOS (LOCALSTORAGE) ---
+        function getFromStorage(key, defaultValue) {
+            const stored = localStorage.getItem(key);
+            try {
+                return stored ? JSON.parse(stored) : defaultValue;
+            } catch (e) {
+                console.error("Error al parsear datos de localStorage:", e);
+                return defaultValue;
+            }
+        }
+
+        function saveToStorage(key, data) {
+            localStorage.setItem(key, JSON.stringify(data));
+        }
+
+        function getCampaigns() {
+            const stored = getFromStorage(CAMPAIGNS_STORAGE_KEY, null);
+            if (!stored) {
+                saveToStorage(CAMPAIGNS_STORAGE_KEY, initialCampaignsData);
+                return initialCampaignsData;
+            }
+            return stored;
+        }
 
         // --- FUNCIONES DE FORMATO Y UI ---
         const formatCurrency = (amount) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
-        const formatDate = (isoString) => new Date(isoString).toLocaleDateString('es-CO');
-
-        const showAuthModal = (show) => {
-            document.getElementById('auth-modal').classList.toggle('hidden', !show);
+        const formatDate = (isoString) => new Date(isoString).toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' });
+        
+        const showToast = (message, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}" class="mr-3"></i> ${message}`;
+            container.appendChild(toast);
+            lucide.createIcons();
+            
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 500);
+            }, 4000);
         };
 
-        const showModal = (title, message, buttons, buttonLayoutClass = 'flex justify-center space-x-4') => {
+        const showModal = (title, message, buttons, layout = 'flex justify-center space-x-4') => {
             document.getElementById('modal-title').innerHTML = title;
             document.getElementById('modal-message').innerHTML = message;
             const buttonsContainer = document.getElementById('modal-buttons');
-            buttonsContainer.innerHTML = ''; // Limpiar botones anteriores
-            buttonsContainer.className = buttonLayoutClass; // Aplicar clase de layout
-
+            buttonsContainer.innerHTML = '';
+            buttonsContainer.className = layout;
             buttons.forEach(btnInfo => {
-                const buttonEl = document.createElement('button');
-                buttonEl.textContent = btnInfo.text;
-                buttonEl.className = btnInfo.classes;
-                buttonEl.onclick = () => {
+                const btn = document.createElement('button');
+                btn.textContent = btnInfo.text;
+                btn.className = btnInfo.classes;
+                btn.onclick = () => {
                     document.getElementById('generic-modal').classList.add('hidden');
-                    if (btnInfo.onClick) {
-                        btnInfo.onClick();
-                    }
+                    if (btnInfo.onClick) btnInfo.onClick();
                 };
-                buttonsContainer.appendChild(buttonEl);
+                buttonsContainer.appendChild(btn);
             });
-
             document.getElementById('generic-modal').classList.remove('hidden');
         };
 
-        const updateUserInfo = (user) => {
-            const userInfoDiv = document.getElementById('user-info');
-            if (user && user.name) {
-                userInfoDiv.innerHTML = `<span class="font-semibold text-gray-700">Hola, ${user.name}</span> <div class="w-8 h-8 bg-indigo-200 text-indigo-700 rounded-full flex items-center justify-center font-bold">${user.name.charAt(0)}</div>`;
-            } else {
-                userInfoDiv.innerHTML = `<span class="text-gray-500">Usuario no identificado</span>`;
-            }
-        };
+        // --- LÓGICA DE RENDERIZADO DEL DASHBOARD ---
+        function renderDashboard() {
+            const campaigns = getCampaigns();
+            const expenses = getFromStorage(EXPENSES_STORAGE_KEY, []);
+            let totalPlannedBudget = 0;
+            const totalSpent = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+            
+            renderCampaignCards(campaigns);
+            populateCampaignSelect(campaigns);
 
-        // --- LÓGICA DE GRÁFICOS ---
-        const createOrUpdateChart = (expenses) => {
+            campaigns.forEach(campaign => {
+                let campaignPlannedBudget;
+                if (campaign.subCampaigns && campaign.subCampaigns.length > 0) {
+                    campaignPlannedBudget = campaign.subCampaigns.filter(sc => sc.active).reduce((sum, sc) => sum + sc.budget, 0);
+                } else {
+                    campaignPlannedBudget = campaign.budget || 0;
+                }
+                totalPlannedBudget += campaignPlannedBudget;
+
+                const campaignExpenses = expenses.filter(e => e.campaignId === campaign.id);
+                const campaignSpent = campaignExpenses.reduce((sum, e) => sum + e.amount, 0);
+                const campaignRemaining = campaignPlannedBudget - campaignSpent;
+                const spentPercentage = campaignPlannedBudget > 0 ? (campaignSpent / campaignPlannedBudget) * 100 : 0;
+
+                document.getElementById(`${campaign.id}-budget`).textContent = formatCurrency(campaignPlannedBudget);
+                document.getElementById(`${campaign.id}-spent`).textContent = formatCurrency(campaignSpent);
+                document.getElementById(`${campaign.id}-remaining`).textContent = formatCurrency(campaignRemaining);
+                document.getElementById(`${campaign.id}-progress`).style.width = `${spentPercentage}%`;
+            });
+
+            document.getElementById('total-budget').textContent = formatCurrency(totalPlannedBudget);
+            document.getElementById('total-spent').textContent = formatCurrency(totalSpent);
+            document.getElementById('remaining-balance').textContent = formatCurrency(totalPlannedBudget - totalSpent);
+
+            renderTransactionsTable(expenses);
+            createOrUpdateChart(expenses);
+            lucide.createIcons();
+        }
+
+        function renderCampaignCards(campaigns) {
+            const container = document.getElementById('campaigns-container');
+            container.innerHTML = campaigns.map(campaign => `
+                <div class="card p-6">
+                    <div class="flex justify-between items-center">
+                        <h4 class="text-lg font-bold ${campaign.id === 'palo-alto' ? 'text-indigo-700' : 'text-teal-700'}">${campaign.name}</h4>
+                        ${campaign.subCampaigns ? `
+                        <button data-campaign-id="${campaign.id}" class="toggle-details-btn text-indigo-500 hover:text-indigo-700 text-sm font-semibold flex items-center">
+                            Ver Plan <i data-lucide="chevron-down" class="ml-1 h-4 w-4 transition-transform"></i>
+                        </button>` : ''}
+                    </div>
+                    <div class="mt-4 space-y-2">
+                        <div class="flex justify-between items-center"><span class="text-gray-500">Presupuesto Planificado:</span><span id="${campaign.id}-budget" class="font-semibold text-gray-800">$0</span></div>
+                        <div class="flex justify-between items-center"><span class="text-gray-500">Gasto Real:</span><span id="${campaign.id}-spent" class="font-semibold text-red-600">$0</span></div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2"><div id="${campaign.id}-progress" class="bg-indigo-600 h-2.5 rounded-full" style="width: 0%"></div></div>
+                        <div class="flex justify-between items-center mt-2"><span class="text-gray-500">Saldo:</span><span id="${campaign.id}-remaining" class="font-bold text-emerald-600">$0</span></div>
+                    </div>
+                    ${campaign.subCampaigns ? `
+                    <div id="${campaign.id}-details" class="hidden mt-6 pt-4 border-t border-gray-200">
+                        <div class="flex justify-between items-center mb-3">
+                            <h5 class="text-md font-bold text-gray-600">Desglose del Plan</h5>
+                            <button data-campaign-id="${campaign.id}" class="add-subcampaign-btn text-sm bg-indigo-100 text-indigo-700 hover:bg-indigo-200 font-semibold py-1 px-3 rounded-full flex items-center">
+                                <i data-lucide="plus" class="h-4 w-4 mr-1"></i>Añadir
+                            </button>
+                        </div>
+                        <div class="space-y-1">
+                            <!-- Header for sub-campaign list -->
+                            <div class="flex items-center text-xs text-gray-500 font-bold px-2 pb-1 border-b">
+                                <div class="flex-grow">Línea</div>
+                                <div class="w-24 text-right">Costo Diario</div>
+                                <div class="w-40 text-right">Acciones</div>
+                            </div>
+                            <!-- Sub-campaign items -->
+                            ${campaign.subCampaigns.map(sc => `
+                            <div class="flex items-center text-sm p-2 rounded-lg hover:bg-gray-50 ${!sc.active && 'opacity-50'}">
+                                <div class="flex-grow">
+                                    <p class="font-medium ${sc.active ? 'text-gray-800' : 'text-red-800 line-through'}">${sc.name}</p>
+                                    <p class="text-xs text-gray-500">${formatCurrency(sc.budget)} / ${sc.days} días</p>
+                                </div>
+                                <div class="w-24 text-right font-semibold text-gray-700">${formatCurrency(sc.budget / (sc.days || 1))}</div>
+                                <div class="w-40 text-right flex items-center justify-end space-x-2">
+                                    <button data-campaign-id="${campaign.id}" data-subcampaign-id="${sc.id}" class="edit-subcampaign-btn text-gray-400 hover:text-indigo-600 p-1 rounded-full"><i data-lucide="edit-3" class="h-4 w-4"></i></button>
+                                    <button data-campaign-id="${campaign.id}" data-subcampaign-id="${sc.id}" class="delete-subcampaign-btn text-gray-400 hover:text-red-600 p-1 rounded-full"><i data-lucide="trash-2" class="h-4 w-4"></i></button>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" class="sr-only peer toggle-status-btn" data-campaign-id="${campaign.id}" data-subcampaign-id="${sc.id}" ${sc.active ? 'checked' : ''}>
+                                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-indigo-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                                    </label>
+                                </div>
+                            </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+        
+        function populateCampaignSelect(campaigns) {
+            const select = document.getElementById('campaign-select');
+            select.innerHTML = campaigns.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        }
+
+        function renderTransactionsTable(expenses) {
+            const tableBody = document.getElementById('transactions-table-body');
+            const sortedExpenses = [...expenses].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            tableBody.innerHTML = sortedExpenses.map(e => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatDate(e.createdAt)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${e.campaignName}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${e.platform}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-800">${formatCurrency(e.amount)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${e.description}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${e.userName || 'Anónimo'}</td>
+                </tr>
+            `).join('');
+        }
+        
+        function createOrUpdateChart(expenses) {
             const chartCanvas = document.getElementById('platform-chart');
             const chartPlaceholder = document.getElementById('chart-placeholder');
 
@@ -369,8 +521,7 @@
                 platformChart.data = chartData;
                 platformChart.update();
             } else {
-                const ctx = chartCanvas.getContext('2d');
-                platformChart = new Chart(ctx, {
+                platformChart = new Chart(chartCanvas.getContext('2d'), {
                     type: 'doughnut',
                     data: chartData,
                     options: {
@@ -378,90 +529,44 @@
                         maintainAspectRatio: false,
                         cutout: '70%',
                         plugins: {
-                            legend: { position: 'bottom' },
+                            legend: { position: 'bottom', labels: { padding: 20 } },
                             tooltip: { callbacks: { label: (c) => `${c.label}: ${formatCurrency(c.parsed)}` } }
                         }
                     }
                 });
             }
-        };
+        }
 
-        // --- LÓGICA DE DATOS (LOCALSTORAGE) ---
-        const getExpensesFromStorage = () => {
-            const storedExpenses = localStorage.getItem(EXPENSES_STORAGE_KEY);
-            return storedExpenses ? JSON.parse(storedExpenses) : [];
-        };
-
-        const saveExpensesToStorage = (expenses) => {
-            localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(expenses));
-        };
-        
-        const getUserFromStorage = () => {
-            const storedUser = localStorage.getItem(USER_STORAGE_KEY);
-            return storedUser ? JSON.parse(storedUser) : null;
-        };
-
-        const saveUserToStorage = (user) => {
-            localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
-        };
-
-        // --- LÓGICA PRINCIPAL DEL DASHBOARD ---
-        const updateDashboard = () => {
-            const expenses = getExpensesFromStorage();
-            const totalSpent = expenses.reduce((sum, expense) => sum + expense.amount, 0);
-            
-            document.getElementById('total-budget').textContent = formatCurrency(TOTAL_BUDGET);
-            document.getElementById('total-spent').textContent = formatCurrency(totalSpent);
-            document.getElementById('remaining-balance').textContent = formatCurrency(TOTAL_BUDGET - totalSpent);
-
-            campaigns.forEach(campaign => {
-                const campaignExpenses = expenses.filter(e => e.campaignId === campaign.id);
-                const campaignSpent = campaignExpenses.reduce((sum, e) => sum + e.amount, 0);
-                const campaignRemaining = campaign.budget - campaignSpent;
-                const spentPercentage = campaign.budget > 0 ? (campaignSpent / campaign.budget) * 100 : 0;
-
-                document.getElementById(`${campaign.id}-budget`).textContent = formatCurrency(campaign.budget);
-                document.getElementById(`${campaign.id}-spent`).textContent = formatCurrency(campaignSpent);
-                document.getElementById(`${campaign.id}-remaining`).textContent = formatCurrency(campaignRemaining);
-                document.getElementById(`${campaign.id}-progress`).style.width = `${spentPercentage}%`;
-            });
-
-            const tableBody = document.getElementById('transactions-table-body');
-            tableBody.innerHTML = expenses
-                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-                .map(e => `
-                <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatDate(e.createdAt)}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${e.campaignName}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${e.platform}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-800">${formatCurrency(e.amount)}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${e.description}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${e.userName || 'Anónimo'}</td>
-                </tr>
-            `).join('');
-
-            createOrUpdateChart(expenses);
-        };
-
-        const handleAddExpense = (e) => {
-            e.preventDefault();
-            if (!currentUser || !currentUser.name) {
-                showModal('Inicio de Sesión Requerido', 'Por favor, ingresa tu nombre para registrar un gasto.', [
-                    { text: 'Entendido', classes: 'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg', onClick: () => showAuthModal(true) }
-                ]);
-                return;
+        // --- MANEJADORES DE EVENTOS ---
+        const updateUserInfo = (user) => {
+            const userInfoDiv = document.getElementById('user-info');
+            if (user && user.name) {
+                userInfoDiv.innerHTML = `<span class="font-semibold text-gray-700">Hola, ${user.name}</span> <div class="w-8 h-8 bg-indigo-200 text-indigo-700 rounded-full flex items-center justify-center font-bold">${user.name.charAt(0)}</div>`;
+            } else {
+                userInfoDiv.innerHTML = `<span class="text-gray-500">Usuario no identificado</span>`;
             }
+        };
 
+        document.getElementById('auth-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username-input').value.trim();
+            if (username) {
+                currentUser = { name: username };
+                saveToStorage(USER_STORAGE_KEY, currentUser);
+                updateUserInfo(currentUser);
+                document.getElementById('auth-modal').classList.add('hidden');
+            }
+        });
+
+        document.getElementById('expense-form').addEventListener('submit', (e) => {
+            e.preventDefault();
             const form = e.target;
             const campaignSelect = form.elements['campaign'];
             const rawAmount = form.elements['amount'].value;
             const cleanedAmount = rawAmount.replace(/\D/g, '');
 
-            if (cleanedAmount === '' || Number(cleanedAmount) <= 0) {
-                showModal('Error en el Monto', 'Por favor, ingresa un monto válido.', [
-                    { text: 'Cerrar', classes: 'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg' }
-                ]);
-                return;
+            if (!cleanedAmount || Number(cleanedAmount) <= 0) {
+                return showToast("Por favor, ingresa un monto válido.", "error");
             }
 
             const newExpense = {
@@ -471,123 +576,217 @@
                 platform: form.elements['platform'].value,
                 amount: Number(cleanedAmount),
                 description: form.elements['description'].value,
-                userName: currentUser.name,
+                userName: currentUser?.name || 'Anónimo',
                 createdAt: new Date().toISOString()
             };
 
-            const expenses = getExpensesFromStorage();
+            const expenses = getFromStorage(EXPENSES_STORAGE_KEY, []);
             expenses.push(newExpense);
-            saveExpensesToStorage(expenses);
+            saveToStorage(EXPENSES_STORAGE_KEY, expenses);
             
-            updateDashboard();
+            showToast("Gasto real añadido correctamente.");
             form.reset();
             document.getElementById('paste-area').value = '';
-        };
+            renderDashboard();
+        });
 
-        const handleClearData = () => {
-            showModal(
+        document.getElementById('clear-data-button').addEventListener('click', () => {
+             showModal(
                 'Confirmar Acción',
-                '¿Estás seguro de que quieres borrar todos los datos? Esta acción no se puede deshacer.',
+                '¿Estás seguro de que quieres borrar <b>todos los datos guardados</b> (gastos y planes de inversión)? Esta acción no se puede deshacer y restaurará la simulación a su estado inicial.',
                 [
                     { text: 'Cancelar', classes: 'bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg' },
-                    { text: 'Borrar Datos', classes: 'bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg', onClick: () => {
+                    { text: 'Sí, Borrar Todo', classes: 'bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg', onClick: () => {
                         localStorage.removeItem(EXPENSES_STORAGE_KEY);
+                        localStorage.removeItem(CAMPAIGNS_STORAGE_KEY);
                         localStorage.removeItem(USER_STORAGE_KEY);
-                        location.reload();
+                        showToast("Todos los datos han sido eliminados.");
+                        setTimeout(() => location.reload(), 1000);
                     }}
                 ]
             );
-        };
+        });
+        
+        document.getElementById('app-container').addEventListener('click', (e) => {
+            const toggleBtn = e.target.closest('.toggle-details-btn');
+            if (toggleBtn) {
+                const campaignId = toggleBtn.dataset.campaignId;
+                document.getElementById(`${campaignId}-details`).classList.toggle('hidden');
+                toggleBtn.querySelector('i').classList.toggle('rotate-180');
+            }
 
-        const populateForm = (campaignId, amount, description, platform) => {
-            document.getElementById('campaign-select').value = campaignId;
-            document.getElementById('amount-input').value = amount;
-            document.getElementById('description-input').value = description;
-            document.getElementById('platform-select').value = platform;
-        }
+            const statusToggle = e.target.closest('.toggle-status-btn');
+            if (statusToggle) {
+                const campaignId = statusToggle.dataset.campaignId;
+                const subCampaignId = statusToggle.dataset.subcampaignId;
+                const newStatus = statusToggle.checked;
+                
+                const campaigns = getCampaigns();
+                const campaignToUpdate = campaigns.find(c => c.id === campaignId);
+                if (campaignToUpdate) {
+                    const subCampaignToUpdate = campaignToUpdate.subCampaigns.find(sc => sc.id === subCampaignId);
+                    if (subCampaignToUpdate) {
+                        subCampaignToUpdate.active = newStatus;
+                        saveToStorage(CAMPAIGNS_STORAGE_KEY, campaigns);
+                        renderDashboard();
+                    }
+                }
+            }
 
-        const handleParseData = () => {
-            const text = document.getElementById('paste-area').value;
-            if (!text) return;
+            const editBtn = e.target.closest('.edit-subcampaign-btn');
+            if (editBtn) {
+                const campaigns = getCampaigns();
+                const campaignId = editBtn.dataset.campaignId;
+                const subCampaignId = editBtn.dataset.subcampaignId;
+                const campaign = campaigns.find(c => c.id === campaignId);
+                const subCampaign = campaign.subCampaigns.find(sc => sc.id === subCampaignId);
+                
+                document.getElementById('subcampaign-modal-title').textContent = 'Editar Línea del Plan';
+                document.getElementById('subcampaign-campaign-id').value = campaignId;
+                document.getElementById('subcampaign-id').value = subCampaignId;
+                document.getElementById('subcampaign-name').value = subCampaign.name;
+                document.getElementById('subcampaign-budget').value = subCampaign.budget;
+                document.getElementById('subcampaign-days').value = subCampaign.days;
+                document.getElementById('subcampaign-modal').classList.remove('hidden');
+            }
 
-            const amountMatch = text.match(/\$\s*([\d\.,]+)/);
-            let cleanedAmount = '';
-            let remainingText = text;
+            const addBtn = e.target.closest('.add-subcampaign-btn');
+            if (addBtn) {
+                const campaignId = addBtn.dataset.campaignId;
+                document.getElementById('subcampaign-modal-title').textContent = 'Añadir Nueva Línea al Plan';
+                document.getElementById('subcampaign-form').reset();
+                document.getElementById('subcampaign-campaign-id').value = campaignId;
+                document.getElementById('subcampaign-id').value = ''; // Clear ID for "add" mode
+                document.getElementById('subcampaign-modal').classList.remove('hidden');
+            }
 
-            if (amountMatch && amountMatch[1]) {
-                cleanedAmount = amountMatch[1].replace(/\./g, '').split(',')[0];
-                remainingText = text.replace(amountMatch[0], '');
-            } else {
+            const deleteBtn = e.target.closest('.delete-subcampaign-btn');
+            if (deleteBtn) {
+                const campaignId = deleteBtn.dataset.campaignId;
+                const subCampaignId = deleteBtn.dataset.subcampaignId;
+                showModal(
+                    'Confirmar Eliminación',
+                    '¿Estás seguro de que quieres eliminar esta línea del plan? Esta acción no se puede deshacer.',
+                    [
+                        { text: 'Cancelar', classes: 'bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg' },
+                        { text: 'Sí, Eliminar', classes: 'bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg', onClick: () => {
+                            let campaigns = getCampaigns();
+                            const campaignToUpdate = campaigns.find(c => c.id === campaignId);
+                            campaignToUpdate.subCampaigns = campaignToUpdate.subCampaigns.filter(sc => sc.id !== subCampaignId);
+                            saveToStorage(CAMPAIGNS_STORAGE_KEY, campaigns);
+                            showToast('Línea del plan eliminada.', 'success');
+                            renderDashboard();
+                        }}
+                    ]
+                );
+            }
+        });
+
+        document.getElementById('cancel-subcampaign-btn').addEventListener('click', () => {
+            document.getElementById('subcampaign-modal').classList.add('hidden');
+        });
+
+        document.getElementById('subcampaign-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const campaignId = document.getElementById('subcampaign-campaign-id').value;
+            const subCampaignId = document.getElementById('subcampaign-id').value; // Will be empty if adding
+            const name = document.getElementById('subcampaign-name').value.trim();
+            const budget = Number(document.getElementById('subcampaign-budget').value.replace(/\D/g, ''));
+            const days = Number(document.getElementById('subcampaign-days').value);
+
+            if (!name || !budget || !days || budget <= 0 || days <= 0) {
+                return showToast("Por favor, completa todos los campos con valores válidos.", "error");
+            }
+            
+            let campaigns = getCampaigns();
+            const campaignToUpdate = campaigns.find(c => c.id === campaignId);
+
+            if (subCampaignId) { // Editing existing
+                const subCampaignToUpdate = campaignToUpdate.subCampaigns.find(sc => sc.id === subCampaignId);
+                subCampaignToUpdate.name = name;
+                subCampaignToUpdate.budget = budget;
+                subCampaignToUpdate.days = days;
+            } else { // Adding new
+                campaignToUpdate.subCampaigns.push({
+                    id: `sc-${crypto.randomUUID()}`,
+                    name,
+                    budget,
+                    days,
+                    active: true
+                });
+            }
+
+            saveToStorage(CAMPAIGNS_STORAGE_KEY, campaigns);
+            showToast(`Plan de inversión ${subCampaignId ? 'actualizado' : 'añadido'} correctamente.`);
+            document.getElementById('subcampaign-modal').classList.add('hidden');
+            renderDashboard();
+        });
+        
+        document.getElementById('parse-button').addEventListener('click', () => {
+             const text = document.getElementById('paste-area').value;
+             if (!text) return;
+
+             const amountMatch = text.match(/\$\s*([\d\.,]+)/);
+             let cleanedAmount = '';
+             let remainingText = text;
+
+             if (amountMatch && amountMatch[1]) {
+                 cleanedAmount = amountMatch[1].replace(/\./g, '').split(',')[0];
+                 remainingText = text.replace(amountMatch[0], '');
+             } else {
                  showModal('Datos no Válidos', 'No se pudo encontrar un monto en el texto pegado. Asegúrate de que incluya un valor como "$ 1.234.567".', [{ text: 'Cerrar', classes: 'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg' }]);
                  return;
-            }
+             }
 
-            const cleanedDescription = remainingText.replace(/\d{1,2}\s+\w{3}\s+\d{4}/, '').trim();
-            
-            const descriptionLower = cleanedDescription.toLowerCase();
-            let detectedPlatform = 'Otro';
-            if (descriptionLower.includes('google')) {
-                detectedPlatform = 'Google Ads';
-            } else if (descriptionLower.includes('facebk') || descriptionLower.includes('facebook') || descriptionLower.includes('meta')) {
-                detectedPlatform = 'Meta Ads';
-            } else if (descriptionLower.includes('tiktok')) {
-                detectedPlatform = 'TikTok Ads';
-            }
-            
-            const title = 'Seleccionar Campaña';
-            const message = `Se detectó un gasto de <b class="text-indigo-600">${formatCurrency(cleanedAmount)}</b> con la descripción "<b class="text-indigo-600">${cleanedDescription}</b>".<br><br>¿A qué campaña pertenece?`;
-            
-            const campaignButtons = campaigns.map(campaign => ({
-                text: campaign.name,
-                classes: 'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg',
-                onClick: () => populateForm(campaign.id, cleanedAmount, cleanedDescription, detectedPlatform)
-            }));
+             const cleanedDescription = remainingText.replace(/\d{1,2}\s+\w{3}\s+\d{4}/, '').trim();
+             
+             const descriptionLower = cleanedDescription.toLowerCase();
+             let detectedPlatform = 'Otro';
+             if (descriptionLower.includes('google')) {
+                 detectedPlatform = 'Google Ads';
+             } else if (descriptionLower.includes('facebk') || descriptionLower.includes('facebook') || descriptionLower.includes('meta')) {
+                 detectedPlatform = 'Meta Ads';
+             } else if (descriptionLower.includes('tiktok')) {
+                 detectedPlatform = 'TikTok Ads';
+             }
+             
+             const title = 'Asignar Gasto a Campaña';
+             const message = `Se detectó un gasto de <b class="text-indigo-600">${formatCurrency(cleanedAmount)}</b> con la descripción "<b class="text-indigo-600">${cleanedDescription}</b>".<br><br>¿A qué campaña pertenece este gasto?`;
+             
+             const populateForm = (campaignId, amount, description, platform) => {
+                document.getElementById('campaign-select').value = campaignId;
+                document.getElementById('amount-input').value = amount;
+                document.getElementById('description-input').value = description;
+                document.getElementById('platform-select').value = platform;
+             }
 
-            const allButtons = [
-                ...campaignButtons,
-                { text: 'Cancelar', classes: 'w-full mt-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg' }
-            ];
+             const campaignButtons = getCampaigns().map(campaign => ({
+                 text: campaign.name,
+                 classes: 'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg',
+                 onClick: () => populateForm(campaign.id, cleanedAmount, cleanedDescription, detectedPlatform)
+             }));
 
-            showModal(title, message, allButtons, 'flex flex-col w-full space-y-2');
-        };
+             const allButtons = [
+                 ...campaignButtons,
+                 { text: 'Cancelar', classes: 'w-full mt-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg' }
+             ];
+
+             showModal(title, message, allButtons, 'flex flex-col w-full space-y-2');
+        });
 
         // --- INICIALIZACIÓN DE LA APLICACIÓN ---
-        document.addEventListener('DOMContentLoaded', () => {
-            const campaignSelect = document.getElementById('campaign-select');
-            campaigns.forEach(c => {
-                const option = document.createElement('option');
-                option.value = c.id;
-                option.textContent = c.name;
-                campaignSelect.appendChild(option);
-            });
-
-            document.getElementById('expense-form').addEventListener('submit', handleAddExpense);
-            document.getElementById('clear-data-button').addEventListener('click', handleClearData);
-            document.getElementById('parse-button').addEventListener('click', handleParseData);
-            
-            lucide.createIcons();
-
-            currentUser = getUserFromStorage();
+        function init() {
+            currentUser = getFromStorage(USER_STORAGE_KEY, null);
             if (currentUser && currentUser.name) {
-                showAuthModal(false);
                 updateUserInfo(currentUser);
             } else {
-                showAuthModal(true);
+                document.getElementById('auth-modal').classList.remove('hidden');
             }
-            updateDashboard();
+            renderDashboard();
+        }
 
-            document.getElementById('auth-form').addEventListener('submit', (e) => {
-                e.preventDefault();
-                const username = document.getElementById('username-input').value.trim();
-                if (username) {
-                    currentUser = { name: username };
-                    saveUserToStorage(currentUser);
-                    updateUserInfo(currentUser);
-                    showAuthModal(false);
-                    updateDashboard();
-                }
-            });
-        });
+        init();
+    });
     </script>
 </body>
 </html>
