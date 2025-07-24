@@ -244,7 +244,7 @@
     </div>
     
     <div id="subcampaign-modal" class="modal-backdrop hidden">
-        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg">
             <h2 id="subcampaign-modal-title" class="text-xl font-bold mb-6"></h2>
             <form id="subcampaign-form" class="space-y-4">
                 <input type="hidden" id="subcampaign-campaign-id">
@@ -253,15 +253,19 @@
                     <label for="subcampaign-name" class="block text-sm font-medium text-gray-700">Nombre de la Línea</label>
                     <input type="text" id="subcampaign-name" class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 sm:text-sm" required placeholder="Ej: Anuncios en Instagram">
                 </div>
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label for="subcampaign-budget" class="block text-sm font-medium text-gray-700">Presupuesto Total (COP)</label>
-                        <input type="text" inputmode="numeric" id="subcampaign-budget" class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 sm:text-sm" required placeholder="500000">
+                        <label for="subcampaign-daily-budget" class="block text-sm font-medium text-gray-700">Presupuesto Diario (COP)</label>
+                        <input type="text" inputmode="numeric" id="subcampaign-daily-budget" class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 sm:text-sm" required placeholder="50000">
                     </div>
                     <div>
                         <label for="subcampaign-days" class="block text-sm font-medium text-gray-700">Duración (días)</label>
-                        <input type="number" id="subcampaign-days" class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 sm:text-sm" required placeholder="30">
+                        <input type="number" id="subcampaign-days" class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 sm:text-sm" required placeholder="30" value="30">
                     </div>
+                </div>
+                 <div>
+                    <label for="subcampaign-budget" class="block text-sm font-medium text-gray-700">Presupuesto Total (Calculado)</label>
+                    <input type="text" id="subcampaign-budget" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-gray-100 rounded-md shadow-sm focus:outline-none sm:text-sm" readonly>
                 </div>
                 <div class="flex justify-end space-x-3 pt-4">
                     <button type="button" id="cancel-subcampaign-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">Cancelar</button>
@@ -297,7 +301,7 @@
             {
                 id: "cascadas-dapa",
                 name: "Cascadas de Dapa 2 Etapa 4",
-                budget: 4000000,
+                budget: 4300000, // Ajustado para que el total sea 10M
                 subCampaigns: []
             }
         ];
@@ -330,6 +334,7 @@
         }
 
         // --- FUNCIONES DE FORMATO Y UI ---
+        const cleanNumber = (str) => Number(String(str).replace(/\D/g, ''));
         const formatCurrency = (amount) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
         const formatDate = (isoString) => new Date(isoString).toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' });
         
@@ -436,26 +441,31 @@
                             <div class="flex items-center text-xs text-gray-500 font-bold px-2 pb-1 border-b">
                                 <div class="flex-grow">Línea</div>
                                 <div class="w-24 text-right">Costo Diario</div>
-                                <div class="w-40 text-right">Acciones</div>
+                                <div class="w-24 text-right">Costo Mensual</div>
+                                <div class="w-32 text-right">Acciones</div>
                             </div>
                             <!-- Sub-campaign items -->
-                            ${campaign.subCampaigns.map(sc => `
-                            <div class="flex items-center text-sm p-2 rounded-lg hover:bg-gray-50 ${!sc.active && 'opacity-50'}">
-                                <div class="flex-grow">
-                                    <p class="font-medium ${sc.active ? 'text-gray-800' : 'text-red-800 line-through'}">${sc.name}</p>
-                                    <p class="text-xs text-gray-500">${formatCurrency(sc.budget)} / ${sc.days} días</p>
+                            ${campaign.subCampaigns.map(sc => {
+                                const dailyCost = sc.budget / (sc.days || 1);
+                                const monthlyCost = dailyCost * 30;
+                                return `
+                                <div class="flex items-center text-sm p-2 rounded-lg hover:bg-gray-50 ${!sc.active && 'opacity-50'}">
+                                    <div class="flex-grow">
+                                        <p class="font-medium ${sc.active ? 'text-gray-800' : 'text-red-800 line-through'}">${sc.name}</p>
+                                        <p class="text-xs text-gray-500">${formatCurrency(sc.budget)} / ${sc.days} días</p>
+                                    </div>
+                                    <div class="w-24 text-right font-semibold text-gray-700">${formatCurrency(dailyCost)}</div>
+                                    <div class="w-24 text-right font-semibold text-gray-700">${formatCurrency(monthlyCost)}</div>
+                                    <div class="w-32 text-right flex items-center justify-end space-x-1">
+                                        <button data-campaign-id="${campaign.id}" data-subcampaign-id="${sc.id}" class="edit-subcampaign-btn text-gray-400 hover:text-indigo-600 p-1 rounded-full"><i data-lucide="edit-3" class="h-4 w-4"></i></button>
+                                        <button data-campaign-id="${campaign.id}" data-subcampaign-id="${sc.id}" class="delete-subcampaign-btn text-gray-400 hover:text-red-600 p-1 rounded-full"><i data-lucide="trash-2" class="h-4 w-4"></i></button>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" class="sr-only peer toggle-status-btn" data-campaign-id="${campaign.id}" data-subcampaign-id="${sc.id}" ${sc.active ? 'checked' : ''}>
+                                            <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-indigo-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                                        </label>
+                                    </div>
                                 </div>
-                                <div class="w-24 text-right font-semibold text-gray-700">${formatCurrency(sc.budget / (sc.days || 1))}</div>
-                                <div class="w-40 text-right flex items-center justify-end space-x-2">
-                                    <button data-campaign-id="${campaign.id}" data-subcampaign-id="${sc.id}" class="edit-subcampaign-btn text-gray-400 hover:text-indigo-600 p-1 rounded-full"><i data-lucide="edit-3" class="h-4 w-4"></i></button>
-                                    <button data-campaign-id="${campaign.id}" data-subcampaign-id="${sc.id}" class="delete-subcampaign-btn text-gray-400 hover:text-red-600 p-1 rounded-full"><i data-lucide="trash-2" class="h-4 w-4"></i></button>
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" class="sr-only peer toggle-status-btn" data-campaign-id="${campaign.id}" data-subcampaign-id="${sc.id}" ${sc.active ? 'checked' : ''}>
-                                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-indigo-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                                    </label>
-                                </div>
-                            </div>
-                            `).join('')}
+                                `}).join('')}
                         </div>
                     </div>
                     ` : ''}
@@ -563,9 +573,9 @@
             const form = e.target;
             const campaignSelect = form.elements['campaign'];
             const rawAmount = form.elements['amount'].value;
-            const cleanedAmount = rawAmount.replace(/\D/g, '');
+            const cleanedAmount = cleanNumber(rawAmount);
 
-            if (!cleanedAmount || Number(cleanedAmount) <= 0) {
+            if (!cleanedAmount || cleanedAmount <= 0) {
                 return showToast("Por favor, ingresa un monto válido.", "error");
             }
 
@@ -574,7 +584,7 @@
                 campaignId: campaignSelect.value,
                 campaignName: campaignSelect.options[campaignSelect.selectedIndex].text,
                 platform: form.elements['platform'].value,
-                amount: Number(cleanedAmount),
+                amount: cleanedAmount,
                 description: form.elements['description'].value,
                 userName: currentUser?.name || 'Anónimo',
                 createdAt: new Date().toISOString()
@@ -592,19 +602,19 @@
 
         document.getElementById('clear-data-button').addEventListener('click', () => {
              showModal(
-                'Confirmar Acción',
-                '¿Estás seguro de que quieres borrar <b>todos los datos guardados</b> (gastos y planes de inversión)? Esta acción no se puede deshacer y restaurará la simulación a su estado inicial.',
-                [
-                    { text: 'Cancelar', classes: 'bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg' },
-                    { text: 'Sí, Borrar Todo', classes: 'bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg', onClick: () => {
-                        localStorage.removeItem(EXPENSES_STORAGE_KEY);
-                        localStorage.removeItem(CAMPAIGNS_STORAGE_KEY);
-                        localStorage.removeItem(USER_STORAGE_KEY);
-                        showToast("Todos los datos han sido eliminados.");
-                        setTimeout(() => location.reload(), 1000);
-                    }}
-                ]
-            );
+                 'Confirmar Acción',
+                 '¿Estás seguro de que quieres borrar <b>todos los datos guardados</b> (gastos y planes de inversión)? Esta acción no se puede deshacer y restaurará la simulación a su estado inicial.',
+                 [
+                     { text: 'Cancelar', classes: 'bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg' },
+                     { text: 'Sí, Borrar Todo', classes: 'bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg', onClick: () => {
+                         localStorage.removeItem(EXPENSES_STORAGE_KEY);
+                         localStorage.removeItem(CAMPAIGNS_STORAGE_KEY);
+                         localStorage.removeItem(USER_STORAGE_KEY);
+                         showToast("Todos los datos han sido eliminados.");
+                         setTimeout(() => location.reload(), 1000);
+                     }}
+                 ]
+             );
         });
         
         document.getElementById('app-container').addEventListener('click', (e) => {
@@ -645,8 +655,12 @@
                 document.getElementById('subcampaign-campaign-id').value = campaignId;
                 document.getElementById('subcampaign-id').value = subCampaignId;
                 document.getElementById('subcampaign-name').value = subCampaign.name;
-                document.getElementById('subcampaign-budget').value = subCampaign.budget;
                 document.getElementById('subcampaign-days').value = subCampaign.days;
+                
+                const dailyBudget = subCampaign.budget / (subCampaign.days || 1);
+                document.getElementById('subcampaign-daily-budget').value = dailyBudget;
+                document.getElementById('subcampaign-budget').value = formatCurrency(subCampaign.budget);
+
                 document.getElementById('subcampaign-modal').classList.remove('hidden');
             }
 
@@ -655,8 +669,10 @@
                 const campaignId = addBtn.dataset.campaignId;
                 document.getElementById('subcampaign-modal-title').textContent = 'Añadir Nueva Línea al Plan';
                 document.getElementById('subcampaign-form').reset();
+                document.getElementById('subcampaign-days').value = 30; // Default to 30 days
                 document.getElementById('subcampaign-campaign-id').value = campaignId;
                 document.getElementById('subcampaign-id').value = ''; // Clear ID for "add" mode
+                updateSubcampaignTotal(); // Calculate initial total
                 document.getElementById('subcampaign-modal').classList.remove('hidden');
             }
 
@@ -682,6 +698,21 @@
             }
         });
 
+        // --- LÓGICA DEL MODAL DE SUBCAMPAÑA ---
+        const subcampaignDailyBudgetInput = document.getElementById('subcampaign-daily-budget');
+        const subcampaignDaysInput = document.getElementById('subcampaign-days');
+        const subcampaignBudgetInput = document.getElementById('subcampaign-budget');
+
+        function updateSubcampaignTotal() {
+            const daily = cleanNumber(subcampaignDailyBudgetInput.value);
+            const days = cleanNumber(subcampaignDaysInput.value) || 1;
+            const total = daily * days;
+            subcampaignBudgetInput.value = formatCurrency(total);
+        }
+
+        subcampaignDailyBudgetInput.addEventListener('input', updateSubcampaignTotal);
+        subcampaignDaysInput.addEventListener('input', updateSubcampaignTotal);
+
         document.getElementById('cancel-subcampaign-btn').addEventListener('click', () => {
             document.getElementById('subcampaign-modal').classList.add('hidden');
         });
@@ -691,10 +722,11 @@
             const campaignId = document.getElementById('subcampaign-campaign-id').value;
             const subCampaignId = document.getElementById('subcampaign-id').value; // Will be empty if adding
             const name = document.getElementById('subcampaign-name').value.trim();
-            const budget = Number(document.getElementById('subcampaign-budget').value.replace(/\D/g, ''));
-            const days = Number(document.getElementById('subcampaign-days').value);
+            const dailyBudget = cleanNumber(subcampaignDailyBudgetInput.value);
+            const days = cleanNumber(subcampaignDaysInput.value);
+            const totalBudget = dailyBudget * days;
 
-            if (!name || !budget || !days || budget <= 0 || days <= 0) {
+            if (!name || !totalBudget || !days || totalBudget <= 0 || days <= 0) {
                 return showToast("Por favor, completa todos los campos con valores válidos.", "error");
             }
             
@@ -704,13 +736,13 @@
             if (subCampaignId) { // Editing existing
                 const subCampaignToUpdate = campaignToUpdate.subCampaigns.find(sc => sc.id === subCampaignId);
                 subCampaignToUpdate.name = name;
-                subCampaignToUpdate.budget = budget;
+                subCampaignToUpdate.budget = totalBudget;
                 subCampaignToUpdate.days = days;
             } else { // Adding new
                 campaignToUpdate.subCampaigns.push({
                     id: `sc-${crypto.randomUUID()}`,
                     name,
-                    budget,
+                    budget: totalBudget,
                     days,
                     active: true
                 });
@@ -754,16 +786,16 @@
              const message = `Se detectó un gasto de <b class="text-indigo-600">${formatCurrency(cleanedAmount)}</b> con la descripción "<b class="text-indigo-600">${cleanedDescription}</b>".<br><br>¿A qué campaña pertenece este gasto?`;
              
              const populateForm = (campaignId, amount, description, platform) => {
-                document.getElementById('campaign-select').value = campaignId;
-                document.getElementById('amount-input').value = amount;
-                document.getElementById('description-input').value = description;
-                document.getElementById('platform-select').value = platform;
+                 document.getElementById('campaign-select').value = campaignId;
+                 document.getElementById('amount-input').value = amount;
+                 document.getElementById('description-input').value = description;
+                 document.getElementById('platform-select').value = platform;
              }
 
              const campaignButtons = getCampaigns().map(campaign => ({
                  text: campaign.name,
                  classes: 'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg',
-                 onClick: () => populateForm(campaign.id, cleanedAmount, cleanedDescription, detectedPlatform)
+                 onClick: () => populateForm(campaign.id, cleanNumber(cleanedAmount), cleanedDescription, detectedPlatform)
              }));
 
              const allButtons = [
